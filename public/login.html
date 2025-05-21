@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styless.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <img src="./src/LogoMotocarro.png" alt="" width="200px" height="100px">
+        <div class="login-content">
+            <h2>Iniciar sesión con</h2>
+            <div class="social-buttons">
+                <button title="Facebook">f</button>
+                <button title="Twitter">t</button>
+                <button title="LinkedIn">in</button>
+            </div>
+            <div class="separator">o</div>
+            <form id="loginForm">
+                <div class="input-group">
+                    <input class="input" type="text" id="username" placeholder="Usuario">
+                </div>
+                <div class="input-group">
+                    <input class="input" type="password" id="password" placeholder="Contraseña">
+                </div>
+                <button class="login-button" type="submit">Ingresar</button> <!-- Movido aquí -->
+            </form>
+
+            <div class="options">
+                <label><input type="checkbox"> Recuérdame</label>
+                <a href="#">¿Olvidó su contraseña?</a>
+            </div>
+
+
+            <div class="register-link">
+                ¿No tienes una cuenta? <a href="#">Registro</a>
+            </div>
+            <p id="message"></p>
+        </div>
+
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loginForm').addEventListener('submit', async (e) => {
+                ;
+
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (result.redirect) {
+                        window.location.href = result.redirect;  // Redirección aquí
+                    }
+                } else {
+                    document.getElementById('message').textContent = result.error || 'Error desconocido';
+                }
+            });
+        });
+
+
+    </script>
+</body>
+
+</html>

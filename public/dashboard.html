@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styless.css">
+</head>
+
+<body>
+
+    <!-- Interfaz del Cliente -->
+    <div class="container">
+        <button id="logoutBtn">Cerrar sesión</button>
+        <h1>Bienvenido al Dashboard</h1>
+        <p>¡Has iniciado sesión correctamente!</p>
+        <h2>¡Solicita un acarreo! 🛵</h2>
+        <div id="cliente-map" class="cliente-map"></div>
+
+        <div class="form-solicitud">
+            <input id="origen" type="text" placeholder="Origen (ej: Cra 80 #25-30)">
+            <input id="destino" type="text" placeholder="Destino (ej: Cl. 50 #40-20)">
+
+            <select id="tipo-carga">
+                <option value="muebles">Tipo de carga - Muebles</option>
+                <option value="paquetes">Paquetes pequeños</option>
+                <option value="herramientas">Herramientas</option>
+            </select>
+
+            <button class="button" id="solicitar-btn">Solicitar Servicio ($15,000 COP)</button>
+        </div>
+    </div>
+
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBEoSLabgw23JHSopeH3k-FASwaQD8r244&libraries=places&callback=initMap"
+        async defer>
+        </script>
+    <script>
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            fetch('/logout')
+                .then(() => window.location.href = '/');
+        });
+
+    </script>
+    <script>
+        let map;
+        let directionsService;
+        let directionsRenderer;
+        let motocarros = [];
+
+        function initMap() {
+            // Configuración inicial del mapa (centrado en Medellín)
+            map = new google.maps.Map(document.getElementById("cliente-map"), {
+                center: { lat: 6.2442, lng: -75.5812 },
+                zoom: 13,
+                mapId: '4504f8b37365c3d0',
+                disableDefaultUI: true,
+                zoomControl: true
+            });
+
+            // Estilo personalizado opcional
+            map.setOptions({
+                styles: [
+                    {
+                        featureType: "poi",
+                        elementType: "labels",
+                        stylers: [{ visibility: "off" }]
+                    }
+                ]
+            });
+
+            // Servicios para rutas y direcciones
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({
+                map: map,
+                suppressMarkers: true,
+                polylineOptions: {
+                    strokeColor: '#3b71ca',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 4
+                }
+            });
+
+            // Autocompletado para los campos
+            new google.maps.places.Autocomplete(document.getElementById("origen"));
+            new google.maps.places.Autocomplete(document.getElementById("destino"));
+
+            // Simular motocarros disponibles
+            agregarMotocarros();
+
+            // Centrar en la ubicación del usuario si permite geolocalización
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    map.setCenter({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
+                    map.setZoom(15);
+                });
+            }
+        }
+
+        function agregarMotocarros() {
+            // Coordenadas de ejemplo en Medellín
+            const ubicaciones = [
+                { lat: 5.171264420641354, lng: -72.5510772745456 },
+                { lat: 5.182473061281964, lng: -72.5485023538029 },
+                { lat: 5.1715739484600265, lng: -72.54495131767791 },
+                { lat: 5.172728679955208, lng: -72.54948804663536 },
+                { lat: 5.1604410107073475, lng: -72.5436627325392 },
+                { lat: 5.170504473822337, lng: -72.53936792999104 }
+            ];
+
+            // Icono personalizado para motocarros
+            const iconoMotocarro = {
+                url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+                scaledSize: new google.maps.Size(32, 32)
+            };
+
+            // Crear marcadores
+            ubicaciones.forEach((ubicacion, i) => {
+                const motocarro = new google.maps.Marker({
+                    position: ubicacion,
+                    map: map,
+                    icon: iconoMotocarro,
+                    title: `Motocarro #${i + 1}`
+                });
+
+                // InfoWindow para cada motocarro
+                const infowindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="padding: 8px;">
+                            <h4 style="margin: 0 0 5px 0; color: #3b71ca;">Motocarro #${i + 1}</h4>
+                            <p style="margin: 0; font-size: 14px;">Disponible ahora</p>
+                            <p style="margin: 5px 0 0 0; font-size: 13px; color: #4a5568;">⭐ 4.8 (25 viajes)</p>
+                        </div>
+                    `
+                });
+
+                motocarro.addListener('click', () => {
+                    infowindow.open(map, motocarro);
+                });
+
+                motocarros.push(motocarro);
+            });
+        }
+
+        function calcularRuta() {
+            const origen = document.getElementById("origen").value;
+            const destino = document.getElementById("destino").value;
+
+            if (!origen || !destino) {
+                alert("Por favor ingresa origen y destino");
+                return;
+            }
+
+            directionsService.route({
+                origin: origen,
+                destination: destino,
+                travelMode: google.maps.TravelMode.DRIVING,
+                provideRouteAlternatives: false
+            }, (response, status) => {
+                if (status === "OK") {
+                    directionsRenderer.setDirections(response);
+
+                    // Mostrar motocarro más cercano (simulación)
+                    const ruta = response.routes[0];
+                    const puntoCercano = ruta.overview_path[Math.floor(ruta.overview_path.length / 3)];
+
+                    motocarros[0].setPosition(puntoCercano);
+                    motocarros[0].setAnimation(google.maps.Animation.BOUNCE);
+
+                    setTimeout(() => {
+                        motocarros[0].setAnimation(null);
+                    }, 2000);
+
+                    alert("Ruta calculada. El motocarro más cercano está en camino!");
+                } else {
+                    alert("Error al calcular la ruta: " + status);
+                }
+            });
+        }
+
+        // Event listeners
+        document.getElementById("solicitar-btn").addEventListener("click", calcularRuta);
+
+        document.querySelectorAll('.lista-servicios .button').forEach(button => {
+            button.addEventListener('click', function () {
+                const servicio = this.closest('.servicio-item').querySelector('h3').textContent;
+                alert(`¡Servicio aceptado! 🎉\n${servicio}`);
+            });
+        });
+    </script>
+</body>
+
+</html>

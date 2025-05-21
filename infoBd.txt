@@ -1,0 +1,6 @@
+user: josep3194
+password: 2PR1A1DUxuoHJR2S
+
+mongodb+srv://josep3194:2PR1A1DUxuoHJR2S@motocapp.4btkjz5.mongodb.net/
+La contraseña para josep3194 se incluye en la cadena de conexión para la configuración por primera vez. 
+Esta contraseña no volverá a estar disponible después de salir de este flujo de conexión.
